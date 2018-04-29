@@ -1,0 +1,10 @@
+# Ignore jupyter notebook stuff
+.ipynb_checkpoints
+*.ipynb
+
+# Ignore notes
+*.txt
+
+# Ignore datasets
+dataset
+python-mnist
