@@ -1,103 +1,64 @@
-#########################################################################
+##########################################
 # Copyright (c) Javier Cabero Guerra 2018
 # Licensed under MIT
-#
-# Neural network architecture extracted from: 
-# https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py 
-# 
-# Dependencies: 
-#   python-mnist - https://pypi.org/project/python-mnist/
-#########################################################################
+##########################################
 
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
+from keras.models import model_from_json
 from keras import backend as K
+import tensorflow as tf
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-batch_size = 128
-num_classes = 10
-epochs = 12
+class MNISTClassifier:
 
-# input image dimensions
-img_rows, img_cols = 28, 28
+	__model_file = 'keras_mnist_cnn_topology.json'
+	__weights_file = 'keras_mnist_cnn_weights.h5'
+	__model = None
 
-from mnist import MNIST
-mndata = MNIST('./mnist-dataset')
-mndata.gz = True
-images, labels = mndata.load_training()
+	__digit_labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-# Convert to numpy arrays
-images = np.asarray(images)
-labels = np.asarray(labels)
+	def __init__(self):
+		""" Creates and trains a MNIST dataset classifier """
+		self.load_cnn(self.__model_file, self.__weights_file)
 
+	def load_cnn(self, model_file, weights_file):
+		model = self.load_cnn_topology(model_file)
+		print('Loading weights...')
+		model.load_weights(weights_file)
+		print("Compiling...")
+		model = self.compile(model)
+		print("Compiled!")
+		print('Model' ,model)
+		self.__model = model
 
-def create_training_test_sets(images, labels, training_split_percentage):
-    """
-        training_split_percentage is the percentage of the data that
-                                  will go into training
-    """
-    train_sample_count = np.floor(training_split_percentage * len(images)).astype(int)
-    test_sample_count = len(images) - train_sample_count
-    idxs_array = np.arange(0, len(images), 1)
-    idxs_train = np.random.choice(idxs_array, train_sample_count, replace=False)
-    idxs_test  = [x for x in idxs_array if x not in idxs_train]
-    x_train = images[idxs_train]
-    y_train = labels[idxs_train]
-    x_test = images[idxs_test]
-    y_test = labels[idxs_test]
-    return (x_train, y_train), (x_test, y_test)
-    
-(x_train, y_train), (x_test, y_test) = create_training_test_sets(images, labels, 0.8)
+	def load_cnn_topology(self, model_file):
+		""" Loads the neural network architecture from a file """
+		json_file = open(model_file)
+		loaded_model_json = json_file.read()
+		json_file.close()
+		model = model_from_json(loaded_model_json)
+		print("Loaded cnn topology from disk")
+		return model
 
-# Reshape data
-if K.image_data_format() == 'channels_first':
-    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-    input_shape = (1, img_rows, img_cols)
-else:
-    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-    input_shape = (img_rows, img_cols, 1)
+	def compile(self, model): 
+		model.compile(loss=keras.losses.categorical_crossentropy,
+		              optimizer=keras.optimizers.Adadelta(),
+		              metrics=['accuracy'])
+		return model
 
-# Normaliza data
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
+	def prediction_percentages_to_digit_label(self, prediction_percentages):
+	    max_idx = np.argmax(prediction_percentages)
+	    return self.__digit_labels[max_idx]
 
-# Convert class vectors to binary class matrices.
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
-
-print('y_train shape:', y_train.shape)
-print('y_test shape:', y_test.shape)
-
-model = Sequential()
-model.add(Conv2D(32, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=input_shape))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(num_classes, activation='softmax'))
-
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
-              metrics=['accuracy'])
-
-model.fit(x_train, y_train,
-          batch_size=batch_size,
-          epochs=epochs,
-          verbose=1,
-          validation_data=(x_test, y_test))
-
-score = model.evaluate(x_test, y_test, verbose=0)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+	def predict(self, sample):
+		sample_array = np.asarray([sample])
+		print(self.__model)
+		print("Predicting...")
+		prediction_percentages = self.__model.predict(sample_array)
+		print("Predicted!")
+		digit_label = self.prediction_percentages_to_digit_label(prediction_percentages)
+		return digit_label

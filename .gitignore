@@ -1,3 +1,6 @@
+# Ignore python stuff
+__pycache__
+
 # Ignore jupyter notebook stuff
 .ipynb_checkpoints
 *.ipynb
@@ -7,4 +10,3 @@
 
 # Ignore datasets
 dataset
-python-mnist
