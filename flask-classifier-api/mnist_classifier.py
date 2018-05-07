@@ -1,7 +1,7 @@
-##########################################
-# Copyright (c) Javier Cabero Guerra 2018
-# Licensed under MIT
-##########################################
+###########################################
+# Copyright (c) Javier Cabero Guerra 2018 #
+# Licensed under MIT                      #
+###########################################
 
 import keras
 from keras.models import Sequential
