@@ -22,6 +22,7 @@ class MNISTClassifier:
 	__digit_labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 	def __init__(self):
+		print(tf.__version__)
 		""" Creates and trains a MNIST dataset classifier """
 		self.load_cnn(self.__model_file, self.__weights_file)
 
